@@ -8,7 +8,7 @@ import signal                       # for making handler of SIGINT
 import subprocess                   # for using subprocess call
 import numpy as np                  # for getting maximum value
 import pyzbar.pyzbar as pyzbar
-import jarcode_red as jc
+import jarcode_red2 as jc
 import jarcode_white as jw
 import jarcode_black as jb
 from enum import Enum               # for using Enum type value
@@ -197,7 +197,7 @@ class Sticker:
         
         img = self.get_image()
         #cv2.imwrite("./hell2.jpg",img)
-        img = cv2.imread("./hell2.jpg")
+        #img = cv2.imread("./hell2.jpg")
         self.sticker_poses.clear()
         
         classes, confidences, boxes = self.net.detect(img, confThreshold = 0.7, nmsThreshold = 0.7)
@@ -224,11 +224,11 @@ class Sticker:
         if len(self.sticker_poses) is not 10: return self.set_camera_auto()
         result =[]
         images =[]
-        #img = self.get_image()
-        img = cv2.imread("./hell2.jpg")
+        img = self.get_image()
+        #img = cv2.imread("./hell2.jpg")
         for i in range(0,10):
             images.append(img[self.sticker_poses[i][1]:self.sticker_poses[i][1]+self.sticker_poses[i][3],self.sticker_poses[i][0]:self.sticker_poses[i][0]+self.sticker_poses[i][2]].copy())
-            result.append(jb.jarcode_black_detection(images[i]))
+            result.append(jc.jarcode_red_detection(images[i]))
             
 
             

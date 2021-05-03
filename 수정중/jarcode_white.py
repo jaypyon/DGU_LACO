@@ -38,6 +38,7 @@ def jarcode_white_detection(img_color):
     resized2 = cv2.resize(closed, dim, interpolation = cv2.INTER_AREA)
     #resized3 = cv2.resize(croped, dim, interpolation = cv2.INTER_AREA)
     #cv2.imshow('img_color', resized3)
+    cv2.imshow('img_color1', resized)
     cv2.imshow('img_color2', resized2)
     cv2.waitKey(0)
     cv2.destroyAllWindows()

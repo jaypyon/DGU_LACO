@@ -2,20 +2,17 @@ import numpy as np
 import cv2
 import imutils
 
-img_color = cv2.imread("./hell2.jpg")
-img_hsv = cv2.cvtColor(img_color, cv2.COLOR_BGR2HSV) # cvtColor 함수를 이용하여 hsv 색공간으로 변환
+img_color = cv2.imread('./hell2.jpg') 
+img_hsv = cv2.cvtColor(img_color, cv2.COLOR_BGR2HSV) # cvtColor hsv
+
 #blurred = cv2.blur(img_hsv, (10, 10))
 mask = cv2.inRange(img_hsv, (136,0,0), (179,255,255))
-
-mask1 = cv2.inRange(img_hsv, (0,33,0), (122,255,255))
-mask = cv2.bitwise_or(mask1, mask )
+#mask2 = cv2.inRange(img_hsv, (175,50,20), (180,255,255))
+#mask = cv2.bitwise_or(mask1)
 croped = cv2.bitwise_and(img_color, img_color, mask=255-mask)
 
-#mask2 = cv2.inRange(img_hsv, (175,50,20), (180,255,255))
-#croped = cv2.bitwise_and(croped, croped, mask=255-mask1)
-
 kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-closed = cv2.morphologyEx(255-mask, cv2.MORPH_CLOSE, kernel)
+closed = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
 closed = cv2.erode(closed, None, iterations = 4)
 closed = cv2.dilate(closed, None, iterations = 4)
 
@@ -38,11 +35,10 @@ dim = (width, height)
     
 # resize image
 resized = cv2.resize(img_color, dim, interpolation = cv2.INTER_AREA)
-resized2 = cv2.resize(closed, dim, interpolation = cv2.INTER_AREA)
-resized3 = cv2.resize(croped, dim, interpolation = cv2.INTER_AREA)
+resized2 = cv2.resize(croped, dim, interpolation = cv2.INTER_AREA)
+#resized3 = cv2.resize(croped, dim, interpolation = cv2.INTER_AREA)
 #cv2.imshow('img_color', resized3)
-cv2.imshow('img_color2', resized)
-cv2.imshow('closed', resized2)
-cv2.imshow('crop', resized3)
+cv2.imshow('img_color1', resized)
+cv2.imshow('img_color2', resized2)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
