@@ -9,6 +9,8 @@ import subprocess                   # for using subprocess call
 import numpy as np                  # for getting maximum value
 import pyzbar.pyzbar as pyzbar
 import jarcode_red as jc
+import jarcode_white as jw
+import jarcode_black as jb
 from enum import Enum               # for using Enum type value
 from csi_camera import CSI_Camera   # for using pi-camera in Jetson nano
 # PyQt5 essential modules
@@ -193,8 +195,9 @@ class Sticker:
         head_heights = []
         head_lower_y = []
         
-        #img = self.get_image()
-        img = cv2.imread("./hell.jpg")
+        img = self.get_image()
+        #cv2.imwrite("./hell2.jpg",img)
+        img = cv2.imread("./hell2.jpg")
         self.sticker_poses.clear()
         
         classes, confidences, boxes = self.net.detect(img, confThreshold = 0.7, nmsThreshold = 0.7)
@@ -219,12 +222,13 @@ class Sticker:
 
     def do_template_matching(self):
         if len(self.sticker_poses) is not 10: return self.set_camera_auto()
+        result =[]
         images =[]
         #img = self.get_image()
-        img = cv2.imread("./hell.jpg")
+        img = cv2.imread("./hell2.jpg")
         for i in range(0,10):
-            temp = img[self.sticker_poses[i][1]:self.sticker_poses[i][1]+self.sticker_poses[i][3],self.sticker_poses[i][0]:self.sticker_poses[i][0]+self.sticker_poses[i][2]].copy()
-            jc.jarcode_red_detection(temp)
+            images.append(img[self.sticker_poses[i][1]:self.sticker_poses[i][1]+self.sticker_poses[i][3],self.sticker_poses[i][0]:self.sticker_poses[i][0]+self.sticker_poses[i][2]].copy())
+            result.append(jb.jarcode_black_detection(images[i]))
             
 
             
