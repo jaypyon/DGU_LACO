@@ -8,6 +8,9 @@ import signal                       # for making handler of SIGINT
 import subprocess                   # for using subprocess call
 import numpy as np                  # for getting maximum value
 import pyzbar.pyzbar as pyzbar
+import jarcode_red as jc
+import jarcode_white as jw
+import jarcode_black as jb
 from enum import Enum               # for using Enum type value
 from csi_camera import CSI_Camera   # for using pi-camera in Jetson nano
 # PyQt5 essential modules
@@ -193,11 +196,13 @@ class Sticker:
         head_lower_y = []
         
         img = self.get_image()
+        #cv2.imwrite("./hell2.jpg",img)
+        img = cv2.imread("./hell2.jpg")
         self.sticker_poses.clear()
         
         classes, confidences, boxes = self.net.detect(img, confThreshold = 0.7, nmsThreshold = 0.7)
         for classId, confidence, box in zip(classes.flatten(), confidences.flatten(), boxes):
-            print(box)
+            print(classId, confidence,box)
             x, y, w, h = box
             head_heights.append(h)
             head_widths.append(w)
@@ -209,7 +214,6 @@ class Sticker:
         self.lower_sticker_bound    = self.upper_sticker_bound + self.body_height
         self.sticker_poses.sort(key = lambda x : x[0])
         
-        
         for i in range(LIGHTER_COUNT):
             self.sticker_poses[i].extend([self.upper_sticker_bound, self.head_width, self.body_height])
             self.sticker_poses[i] = np.array(self.sticker_poses[i])
@@ -218,37 +222,15 @@ class Sticker:
 
     def do_template_matching(self):
         if len(self.sticker_poses) is not 10: return self.set_camera_auto()
-        
-        img = self.get_image()
-        end_y = self.lower_sticker_bound
-        start_y = self.upper_sticker_bound
-        self.error_sticker_images.clear()
-        self.lighter_error_flag = [True for _ in range(LIGHTER_COUNT)]
-        self.sys_result_label.setStyleSheet("font-weight: bold; font-size: 18px; color:" + GET_RANDOM_COLOR())
-        
-        for idx, sticker_pos in enumerate(self.sticker_poses):
-            start_x = sticker_pos[0]
-            end_x = sticker_pos[0] + sticker_pos[2]
-            sticker_img = img[start_y : end_y, start_x : end_x]
-            sticker_img = cv2.medianBlur(sticker_img, 3)
-            self.gpu_target_img.upload(sticker_img)
-            result = TEMPLATE_MATCHER.match(self.gpu_target_img, self.gpu_template_img).download()
-            score = cv2.minMaxLoc(result)[0]
-            if score <= 0.09: self.lighter_error_flag[idx] = False
-        
-        # Check whether there is an error
-        if True not in self.lighter_error_flag:
-            self.sys_result_label.setText("정상 세트 [TM]")
-            return
-        
-        for idx, result in enumerate(self.lighter_error_flag):
-            if result is True:
-                start_x = self.sticker_poses[idx][0]
-                end_x = start_x + self.head_width
-                error_sticker_image = img[start_y : end_y, start_x : end_x]
-                error_sticker_image = cv2.resize(error_sticker_image, (int(self.head_width / 1.5), int(self.upper_sticker_bound / 1.5)))
-                self.error_sticker_images.append([idx, error_sticker_image])
-        self.check_barcode()
+        result =[]
+        images =[]
+        #img = self.get_image()
+        img = cv2.imread("./hell2.jpg")
+        for i in range(0,10):
+            images.append(img[self.sticker_poses[i][1]:self.sticker_poses[i][1]+self.sticker_poses[i][3],self.sticker_poses[i][0]:self.sticker_poses[i][0]+self.sticker_poses[i][2]].copy())
+            result.append(jb.jarcode_black_detection(images[i]))
+            
+
             
     def check_barcode(self):
         for loop_cnt in range(3):
