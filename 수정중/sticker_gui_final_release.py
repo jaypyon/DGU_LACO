@@ -197,6 +197,7 @@ class Sticker:
         
         classes, confidences, boxes = self.net.detect(img, confThreshold = 0.7, nmsThreshold = 0.7)
         for classId, confidence, box in zip(classes.flatten(), confidences.flatten(), boxes):
+            print(box)
             x, y, w, h = box
             head_heights.append(h)
             head_widths.append(w)
@@ -207,9 +208,13 @@ class Sticker:
         self.body_height            = int(round(self.head_width * 3.8))
         self.lower_sticker_bound    = self.upper_sticker_bound + self.body_height
         self.sticker_poses.sort(key = lambda x : x[0])
+        
+        
         for i in range(LIGHTER_COUNT):
             self.sticker_poses[i].extend([self.upper_sticker_bound, self.head_width, self.body_height])
             self.sticker_poses[i] = np.array(self.sticker_poses[i])
+
+        
 
     def do_template_matching(self):
         if len(self.sticker_poses) is not 10: return self.set_camera_auto()
