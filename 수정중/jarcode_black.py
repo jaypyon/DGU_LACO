@@ -1,7 +1,7 @@
 import cv2 as cv2
 import numpy as np
 import imutils
-img = cv2.imread('./BRC.jpg')
+img = cv2.imread('./correct_2_red.jpg')
 
 if img is not None:
     print('Original Dimensions : ',img.shape)
@@ -14,9 +14,9 @@ if img is not None:
 
   
     print('Resized Dimensions : ',gradient.shape)
-    blurred = cv2.blur(gradient, (20, 1))
+    blurred = cv2.blur(gradient, (15, 15))
     (_, thresh) = cv2.threshold(blurred, 225, 255, cv2.THRESH_BINARY)
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (21, 7))
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (10, 10))
     closed = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
     closed = cv2.erode(closed, None, iterations = 4)
     closed = cv2.dilate(closed, None, iterations = 4)
@@ -31,7 +31,7 @@ if img is not None:
     box = np.int0(box)
 
     cv2.drawContours(img, [box], -1, (0, 255, 255), 3)
-    scale_percent = 50 # percent of original size
+    scale_percent = 100 # percent of original size
     width = int(img.shape[1] * scale_percent / 100)
     height = int(img.shape[0] * scale_percent / 100)
     dim = (width, height)
