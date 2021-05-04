@@ -6,7 +6,7 @@ import copy                         # for using CSI_Camera module
 import signal                       # for making handler of SIGINT
 import subprocess                   # for using subprocess call
 import numpy as np                  # for getting maximum value
-import pyzbar.pyzbar as pyzbar
+import jarcode_red2 as jc
 from enum import Enum               # for using Enum type value
 from csi_camera import CSI_Camera   # for using pi-camera in Jetson nano
 # PyQt5 essential modules
@@ -240,27 +240,23 @@ class Sticker:
                 error_sticker_image = cv2.resize(error_sticker_image, (int(self.head_width / 1.5), int(self.upper_sticker_bound / 1.5)))
                 self.error_sticker_images.append([idx, error_sticker_image])
         
-        self.check_barcode()
+        self.check_red_box()
             
-    def check_barcode(self):
+    def check_red_box(self):
+        count = 0
         for loop_cnt in range(3):
             for sticker_num, sticker_img in self.error_sticker_images:
                 if self.lighter_error_flag[sticker_num] is False: continue
-                # Step 1. Substract blue color from sticker image.
-                sticker_img_hsv = cv2.cvtColor(sticker_img, cv2.COLOR_BGR2HSV)
-                mask_img = cv2.inRange(sticker_img_hsv, LOWER_BOUNDARY_BLUE, UPPER_BOUNDARY_BLUE)
-                sticker_img = cv2.cvtColor(sticker_img, cv2.COLOR_BGR2GRAY)
-                sticker_img = cv2.add(sticker_img, mask_img)
-                # Step 2. Detect 1D barcode from sticker image.
-                decoded = pyzbar.decode(sticker_img)
-                if len(decoded) > 0 : self.lighter_error_flag[sticker_num] = False
-            if True not in self.lighter_error_flag:
+                if jc.jarcode_red_detection(sticker_img) is True: 
+                    print(sticker_num)
+                    count += 1
+            
+            if count >= len(self.error_sticker_images) -2:
                 self.sys_result_label.setText("정상 세트 [BM1]")
                 return
-            
-        err_string = "불량품 세트"
-        self.sys_result_label.setText("불량품 세트" if self.lighter_error_flag.count(True) > 1 
-                                      else "정상 세트 [BM2]")
+            else: 
+                self.sys_result_label.setText("불량품 세트")
+                return
         
     def quit_program(self):
         self.camera.stop()
