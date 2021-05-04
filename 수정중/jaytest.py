@@ -196,7 +196,7 @@ class Sticker:
         head_lower_y = []
         
         img = self.get_image()
-        #cv2.imwrite("./hell2.jpg",img)
+        cv2.imwrite("./hell6.jpg",img)
         #img = cv2.imread("./hell2.jpg")
         self.sticker_poses.clear()
         

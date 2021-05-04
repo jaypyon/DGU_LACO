@@ -29,7 +29,7 @@ while True:
     
     # Start reading the webcam feed frame by frame.
     #ret, frame = cap.read()
-    frame = cv2.imread("./1234567.jpg")
+    frame = cv2.imread("./hell10.jpg")
     #if not ret:
     #    break
     # Flip the frame horizontally (Not required)
