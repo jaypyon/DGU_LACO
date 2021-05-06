@@ -27,7 +27,10 @@ def jarcode_white_detection(img_color):
     box = cv2.cv.BoxPoints(rect) if imutils.is_cv2() else cv2.boxPoints(rect)
     box = np.int0(box)
     cv2.drawContours(img_color, [box], -1, (0, 255, 255), 3)
-    print('Resized Dimensions : ',closed.shape)
+    # print('Resized Dimensions : ',closed.shape)
+    # cv2.imshow("whitesol1",img_color)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
     return jarcode_white_boxsize(box,img_color)
 
 
@@ -37,10 +40,10 @@ def jarcode_white_boxsize(box,img):
 
     
     low_height = pow(img.shape[0]*0.5,2)
-    high_height =  pow(img.shape[0]*0.9,2)
+    high_height =  pow(img.shape[0],2)
 
     low_width = pow(img.shape[1]*0.5,2)
-    high_width = pow(img.shape[1]*0.9,2)
+    high_width = pow(img.shape[1],2)
 
     print(img.shape[0],img.shape[1])
     print(low_height,high_height, height)
@@ -51,16 +54,16 @@ def jarcode_white_boxsize(box,img):
 
     if (low_height<=height) and (height<=high_height):
         h_flag = True
-        print("높이 정상")
+        #print("높이 정상")
     else:
-        print("높이 불량") 
+        #print("높이 불량") 
         return False
     
     if (low_width<=width) and (width<=high_width):
         w_flag = True
-        print("너비 정상")
+        #print("너비 정상")
     else:         
-        print("너비 불량")
+        #print("너비 불량")
         return False
     if h_flag and w_flag:
         return True
