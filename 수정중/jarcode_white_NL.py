@@ -2,19 +2,20 @@ import numpy as np
 import cv2
 import imutils
 
-img_color = cv2.imread('./hell6.jpg') 
-img_hsv = cv2.cvtColor(img_color, cv2.COLOR_BGR2HSV) # cvtColor hsv
+img_color = cv2.imread('./testhell6.jpg') 
+img_hsv = cv2.cvtColor(img_color, cv2.COLOR_BGR2HSV)
 
-#blurred = cv2.blur(img_hsv, (10, 10))
+
 mask = cv2.inRange(img_hsv, (136,98,0), (179,255,255))
-#mask2 = cv2.inRange(img_hsv, (175,50,20), (180,255,255))
-#mask = cv2.bitwise_or(mask1)
-croped = cv2.bitwise_and(img_color, img_color, mask=255-mask)
+mask_white = cv2.inRange(img_hsv, (48,0,151), (87,170,255))
+mask_final = cv2.bitwise_and(255-mask,mask_white)
 
+#croped = cv2.bitwise_and(img_color, img_color, mask=mask_final)
 kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-closed = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-closed = cv2.erode(closed, None, iterations = 4)
+closed = cv2.morphologyEx(mask_final, cv2.MORPH_CLOSE, kernel)
 closed = cv2.dilate(closed, None, iterations = 4)
+closed = cv2.erode(closed, None, iterations = 4)
+
 
 cnts = cv2.findContours(closed.copy(), cv2.RETR_EXTERNAL,
 cv2.CHAIN_APPROX_SIMPLE)
@@ -34,10 +35,9 @@ height = int(img_color.shape[0] * scale_percent / 100)
 dim = (width, height)
     
 # resize image
-resized = cv2.resize(closed, dim, interpolation = cv2.INTER_AREA)
+resized = cv2.resize(img_color, dim, interpolation = cv2.INTER_AREA)
 resized2 = cv2.resize(croped, dim, interpolation = cv2.INTER_AREA)
-#resized3 = cv2.resize(croped, dim, interpolation = cv2.INTER_AREA)
-#cv2.imshow('img_color', resized3)
+
 cv2.imshow('img_color1', resized)
 cv2.imshow('img_color2', resized2)
 cv2.waitKey(0)

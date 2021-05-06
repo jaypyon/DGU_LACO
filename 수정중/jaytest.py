@@ -3,14 +3,10 @@ import os                           # for getting system information
 import sys                          # for using sys.exit() function
 import cv2                          # for using OpenCV4.5 and CUDNN
 import copy                         # for using CSI_Camera module
-import random
 import signal                       # for making handler of SIGINT
 import subprocess                   # for using subprocess call
 import numpy as np                  # for getting maximum value
-import pyzbar.pyzbar as pyzbar
 import jarcode_red2 as jc
-import jarcode_white as jw
-import jarcode_black as jb
 from enum import Enum               # for using Enum type value
 from csi_camera import CSI_Camera   # for using pi-camera in Jetson nano
 # PyQt5 essential modules
@@ -22,16 +18,14 @@ from PyQt5.QtWidgets import QApplication, QGridLayout, QWidget, QSlider, QLabel,
 ####### Static Literals #######
 DISPLAY_WIDTH   = 2048       # Display frame's width
 DISPLAY_HEIGHT  = 1536       # Display frame's height
-MAX_FRAME_COUNT = 1
 LIGHTER_COUNT   = 10
+MAX_FRAME_COUNT = 1
 LOWER_BOUNDARY_BLUE = np.array([95, 160, 160])      # HSV format
 UPPER_BOUNDARY_BLUE = np.array([110, 255, 255])     # Hue, Saturation, Value
-TEMPLATE_IMAGE_ACE = cv2.imread("./new_template/ace.jpg")
-TEMPLATE_IMAGE_BTN = cv2.imread("./new_template/btn.jpg")
+TEMPLATE_IMAGE_ACE = cv2.imread("./template_img_ace.jpg")
+TEMPLATE_IMAGE_BTN = cv2.imread("./template_img_btn.jpg")
 THERMAL_PATH = '/sys/devices/virtual/thermal/thermal_zone0/temp'
 TEMPLATE_MATCHER = cv2.cuda.createTemplateMatching(cv2.CV_8UC1, cv2.TM_SQDIFF_NORMED)
-RAND = lambda : random.randint(16, 210)
-GET_RANDOM_COLOR = lambda : '#' + str(hex(RAND()))[2:] + str(hex(RAND()))[2:] + str(hex(RAND()))[2:]
 
 class State(Enum):
     IDLE    = 1     # Never used.
@@ -108,7 +102,7 @@ class Sticker:
         self.camera.start()
     
     def initialize_yolo(self):
-        self.net.setInputSize(448, 448)      # It can be (448, 448) either if you need.
+        self.net.setInputSize(416, 416)      # It can be (448, 448) either if you need.
         self.net.setInputScale(1.0 / 255)    # Scaled by 1byte [0, 255]
         self.net.setInputSwapRB(True)        # Swap BGR order to RGB
         self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)    # For using CUDA GPU
@@ -166,7 +160,7 @@ class Sticker:
         offset_y = int(round(self.manual_box_height) * 0.05)
         template_img = cv2.medianBlur(template_img, 3)
         template_img = template_img[offset_y : -offset_y, offset_x : -offset_x]
-        save_location = "./new_template/ace.jpg" if self.apply_btn_push_cnt == 1 else "./new_template/btn.jpg"
+        save_location = "./template_img_ace.jpg" if self.apply_btn_push_cnt == 1 else "./template_img_btn.jpg"
         cv2.imwrite(save_location, template_img)
 
     def get_image(self):
@@ -180,7 +174,7 @@ class Sticker:
         img = self.get_image()
         if img is None: return
         for sticker in self.sticker_poses:
-            cv2.rectangle(img, sticker, (255, 0, 255), 5)
+            cv2.rectangle(img, sticker, (255, 255, 0), 5)
         return img
     
     def show_image_manual_setting(self):
@@ -195,59 +189,76 @@ class Sticker:
         head_heights = []
         head_lower_y = []
         
-        img = self.get_image()
-        cv2.imwrite("./hell6.jpg",img)
-        #img = cv2.imread("./hell2.jpg")
+        #img = self.get_image()
+        img = cv2.imread("./hell6.jpg")
         self.sticker_poses.clear()
         
         classes, confidences, boxes = self.net.detect(img, confThreshold = 0.7, nmsThreshold = 0.7)
         for classId, confidence, box in zip(classes.flatten(), confidences.flatten(), boxes):
-            print(classId, confidence,box)
             x, y, w, h = box
             head_heights.append(h)
             head_widths.append(w)
             head_lower_y.append(y + h)
             self.sticker_poses.append([x])
-        self.head_width             = int(round(sum(head_widths) / len(head_widths)))
-        self.upper_sticker_bound    = int(round(sum(head_lower_y) / len(head_lower_y)))
+        self.head_width             = int(round(sum(head_widths) / 10))
+        self.upper_sticker_bound    = int(round(sum(head_lower_y) / 10))
         self.body_height            = int(round(self.head_width * 3.8))
         self.lower_sticker_bound    = self.upper_sticker_bound + self.body_height
         self.sticker_poses.sort(key = lambda x : x[0])
-        
         for i in range(LIGHTER_COUNT):
             self.sticker_poses[i].extend([self.upper_sticker_bound, self.head_width, self.body_height])
             self.sticker_poses[i] = np.array(self.sticker_poses[i])
 
-        
-
     def do_template_matching(self):
         if len(self.sticker_poses) is not 10: return self.set_camera_auto()
-        result =[]
-        images =[]
-        img = self.get_image()
-        #img = cv2.imread("./hell2.jpg")
-        for i in range(0,10):
-            images.append(img[self.sticker_poses[i][1]:self.sticker_poses[i][1]+self.sticker_poses[i][3],self.sticker_poses[i][0]:self.sticker_poses[i][0]+self.sticker_poses[i][2]].copy())
-            result.append(jc.jarcode_red_detection(images[i]))
+        
+        #img = self.get_image()
+        img = cv2.imread("./hell6.jpg")
+        end_y = self.lower_sticker_bound
+        start_y = self.upper_sticker_bound
+        self.error_sticker_images.clear()
+        self.lighter_error_flag = [True for _ in range(LIGHTER_COUNT)]
+        
+        for idx, sticker_pos in enumerate(self.sticker_poses):
+            start_x = sticker_pos[0]
+            end_x = sticker_pos[0] + sticker_pos[2]
+            sticker_img = img[start_y : end_y, start_x : end_x]
+            sticker_img = cv2.medianBlur(sticker_img, 3)
+            self.gpu_target_img.upload(sticker_img)
+            result = TEMPLATE_MATCHER.match(self.gpu_target_img, self.gpu_template_img).download()
+            score = cv2.minMaxLoc(result)[0]
+            if score <= 0.09: self.lighter_error_flag[idx] = False
+        
+        # Check whether there is an error
+        if True not in self.lighter_error_flag:
+            self.sys_result_label.setText("정상 세트 [TM]")
+            return
+        
+        for idx, result in enumerate(self.lighter_error_flag):
+            if result is True:
+                start_x = self.sticker_poses[idx][0]
+                end_x = start_x + self.head_width
+                error_sticker_image = img[start_y : end_y, start_x : end_x]
+                error_sticker_image = cv2.resize(error_sticker_image, (int(self.head_width / 1.5), int(self.upper_sticker_bound / 1.5)))
+                self.error_sticker_images.append([idx, error_sticker_image])
+        
+        self.check_red_box()
             
-
-            
-    def check_barcode(self):
+    def check_red_box(self):
+        count = 0
         for loop_cnt in range(3):
             for sticker_num, sticker_img in self.error_sticker_images:
                 if self.lighter_error_flag[sticker_num] is False: continue
-                # Step 1. Substract blue color from sticker image.
-                sticker_img_hsv = cv2.cvtColor(sticker_img, cv2.COLOR_BGR2HSV)
-                mask_img = cv2.inRange(sticker_img_hsv, LOWER_BOUNDARY_BLUE, UPPER_BOUNDARY_BLUE)
-                sticker_img = cv2.cvtColor(sticker_img, cv2.COLOR_BGR2GRAY)
-                sticker_img = cv2.add(sticker_img, mask_img)
-                # Step 2. Detect 1D barcode from sticker image.
-                decoded = pyzbar.decode(sticker_img)
-                if len(decoded) > 0 : self.lighter_error_flag[sticker_num] = False
-            if True not in self.lighter_error_flag:
+                if jc.jarcode_red_detection(sticker_img) is True: 
+                    print(sticker_num)
+                    count += 1
+            
+            if count >= len(self.error_sticker_images) -2:
                 self.sys_result_label.setText("정상 세트 [BM1]")
                 return
-        self.sys_result_label.setText("불량품 세트" if self.lighter_error_flag.count(True) > 1 else "정상 세트 [BM2]")
+            else: 
+                self.sys_result_label.setText("불량품 세트")
+                return
         
     def quit_program(self):
         self.camera.stop()
@@ -301,7 +312,7 @@ class StickerApp(QWidget, SystemInfo, Sticker):
         self.camera_img_label = QLabel(self)
         
         self.sys_result_label = QLabel('판단 결과 출력', self)
-        self.sys_result_label.setStyleSheet("font-weight: bold; font-size: 18px; color: red")
+        self.sys_result_label.setStyleSheet("font-weight: bold; color: red")
         self.sys_result_label.setWordWrap(True)
         self.sys_result_label.setAlignment(Qt.AlignCenter)
         self.sys_result_label.setFrameStyle(QFrame.Panel)
