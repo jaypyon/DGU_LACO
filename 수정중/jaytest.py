@@ -191,7 +191,8 @@ class Sticker:
         head_lower_y = []
         
         #img = self.get_image()
-        img = cv2.imread("./hell6.jpg")
+        img = cv2.imread("./hell7.jpg")
+        #cv2.imwrite("./hell7.jpg",img)
         self.sticker_poses.clear()
         
         classes, confidences, boxes = self.net.detect(img, confThreshold = 0.7, nmsThreshold = 0.7)
@@ -214,7 +215,7 @@ class Sticker:
         if len(self.sticker_poses) is not 10: return self.set_camera_auto()
         
         #img = self.get_image()
-        img = cv2.imread("./hell6.jpg")
+        img = cv2.imread("./hell7.jpg")
         end_y = self.lower_sticker_bound
         start_y = self.upper_sticker_bound
         self.error_sticker_images.clear()
@@ -225,12 +226,14 @@ class Sticker:
             end_x = sticker_pos[0] + sticker_pos[2]
             sticker_img = img[start_y : end_y, start_x : end_x] #이미지 잘라서
 
+            #self.lighter_error_flag[idx] = not (jw.jarcode_white_detection(sticker_img))
             self.lighter_error_flag[idx] = jw.jarcode_white_detection(sticker_img)
-        
+            if(self.lighter_error_flag[idx] is False):print(str(idx)+"번 라이터는 화이트 솔루션 기준 불량입니다.")
+
         # Check whether there is an error
         if True not in self.lighter_error_flag:
             self.sys_result_label.setText("정상 세트 [TM]")
-            print("----------------화이트 솔루션 끝 ------------------")
+            print("---------------- 화이트 솔루션 정상 종료 ------------------")
             return
         
         for idx, result in enumerate(self.lighter_error_flag):
@@ -248,11 +251,11 @@ class Sticker:
         count = 0
         for loop_cnt in range(3):
             for sticker_num, sticker_img in self.error_sticker_images:
-                if self.lighter_error_flag[sticker_num] is False: continue
+                if self.lighter_error_flag[sticker_num] is False:  continue
                 if jc.jarcode_red_detection(sticker_img) is True: 
                     print(sticker_num)
                     count += 1
-            
+                else: print(str(sticker_num)+"번 이미지는 레드 솔루션 불량입니다")
             if count >= len(self.error_sticker_images) -2:
                 self.sys_result_label.setText("정상 세트 [BM1]")
                 return
