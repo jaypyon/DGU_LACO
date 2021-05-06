@@ -7,6 +7,7 @@ import signal                       # for making handler of SIGINT
 import subprocess                   # for using subprocess call
 import numpy as np                  # for getting maximum value
 import jarcode_red2 as jc
+import jarcode_white_NL as jw
 from enum import Enum               # for using Enum type value
 from csi_camera import CSI_Camera   # for using pi-camera in Jetson nano
 # PyQt5 essential modules
@@ -218,20 +219,18 @@ class Sticker:
         start_y = self.upper_sticker_bound
         self.error_sticker_images.clear()
         self.lighter_error_flag = [True for _ in range(LIGHTER_COUNT)]
-        
+        print("----------------화이트 솔루션 시작 ------------------")
         for idx, sticker_pos in enumerate(self.sticker_poses):
             start_x = sticker_pos[0]
             end_x = sticker_pos[0] + sticker_pos[2]
-            sticker_img = img[start_y : end_y, start_x : end_x]
-            sticker_img = cv2.medianBlur(sticker_img, 3)
-            self.gpu_target_img.upload(sticker_img)
-            result = TEMPLATE_MATCHER.match(self.gpu_target_img, self.gpu_template_img).download()
-            score = cv2.minMaxLoc(result)[0]
-            if score <= 0.09: self.lighter_error_flag[idx] = False
+            sticker_img = img[start_y : end_y, start_x : end_x] #이미지 잘라서
+
+            self.lighter_error_flag[idx] = jw.jarcode_white_detection(sticker_img)
         
         # Check whether there is an error
         if True not in self.lighter_error_flag:
             self.sys_result_label.setText("정상 세트 [TM]")
+            print("----------------화이트 솔루션 끝 ------------------")
             return
         
         for idx, result in enumerate(self.lighter_error_flag):
@@ -242,6 +241,7 @@ class Sticker:
                 error_sticker_image = cv2.resize(error_sticker_image, (int(self.head_width / 1.5), int(self.upper_sticker_bound / 1.5)))
                 self.error_sticker_images.append([idx, error_sticker_image])
         
+        print("----------------레드 솔루션 시작 ------------------")
         self.check_red_box()
             
     def check_red_box(self):
