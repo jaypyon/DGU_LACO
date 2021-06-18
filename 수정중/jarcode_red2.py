@@ -4,12 +4,13 @@ import imutils
 
 def jarcode_red_detection(img_color): 
 
+############# HSV, 범위 조정 ################################
     img_hsv = cv2.cvtColor(img_color, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(img_hsv,  (0,103,0), (179,255,255))
-
     maskr1 = cv2.inRange(img_hsv, (0,50,20), (5,255,255))
     maskr2 = cv2.inRange(img_hsv, (175,50,20), (180,255,255))
     mask_red = cv2.bitwise_or(maskr1, maskr2 )
+#############################################################
 
     croped = cv2.bitwise_and(img_color, img_color, mask=255-mask)
     cropped = cv2.bitwise_and(croped, croped, mask=mask_red)

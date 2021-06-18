@@ -5,11 +5,11 @@ import imutils
 def jarcode_white_detection(img_color): 
     img_hsv = cv2.cvtColor(img_color, cv2.COLOR_BGR2HSV)
 
-
+############# HSV, 범위 조정 ################################
     mask = cv2.inRange(img_hsv, (136,98,0), (179,255,255))
     mask_white = cv2.inRange(img_hsv, (48,0,151), (87,170,255))
     mask_final = cv2.bitwise_and(255-mask,mask_white)
-
+#############################################################
     croped = cv2.bitwise_and(img_color, img_color, mask=mask_final)
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
     closed = cv2.morphologyEx(mask_final, cv2.MORPH_CLOSE, kernel)

@@ -190,9 +190,7 @@ class Sticker:
         head_heights = []
         head_lower_y = []
         
-        #img = self.get_image()
-        img = cv2.imread("./hell7.jpg")
-        #cv2.imwrite("./hell7.jpg",img)
+        img = self.get_image()
         self.sticker_poses.clear()
         
         classes, confidences, boxes = self.net.detect(img, confThreshold = 0.7, nmsThreshold = 0.7)
@@ -213,9 +211,7 @@ class Sticker:
 
     def do_template_matching(self):
         if len(self.sticker_poses) is not 10: return self.set_camera_auto()
-        
-        #img = self.get_image()
-        img = cv2.imread("./hell7.jpg")
+        img = self.get_image()
         end_y = self.lower_sticker_bound
         start_y = self.upper_sticker_bound
         self.error_sticker_images.clear()
@@ -256,7 +252,7 @@ class Sticker:
                     print(sticker_num)
                     count += 1
                 else: print(str(sticker_num)+"번 이미지는 레드 솔루션 불량입니다")
-            if count >= len(self.error_sticker_images) -2:
+            if count >= len(self.error_sticker_images):
                 self.sys_result_label.setText("정상 세트 [BM1]")
                 return
             else: 
